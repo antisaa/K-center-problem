@@ -9,9 +9,10 @@
 #include <utility>
 #include <string>
 #include <sstream>
+#include <fstream>
 
 
-void rjesenjeGen( geneticAlgorithm *alg, graph *A )
+double rjesenjeGen( geneticAlgorithm *alg, graph *A )
 {
 	std::vector< double > distanceFromClosestWarehouse(A->n, -1);
 
@@ -51,6 +52,7 @@ void rjesenjeGen( geneticAlgorithm *alg, graph *A )
 	}
 
 	std::cout << "Rjesenje u GENETSKOM ALGORITMU: " << maxDistance << std::endl;
+	return maxDistance;
 }
 
 ////////////////////////////////////////////
@@ -67,6 +69,8 @@ int main(int argc, char **argv)
 	int range;				// inic. bez .txt	
 	std::string fileName;						// inic. sa .txt
 
+	std::ofstream myfile("resultFile.txt");
+    
 	graph *A = new graph();
 	if( argc == 5 )
 	{
@@ -166,7 +170,13 @@ int main(int argc, char **argv)
 			}
 		}
 
-		std::cout << "Rjesenje u SIMLULIRANOM KALJENJU: " << temp << std::endl;		
+		std::cout << "Rjesenje u SIMLULIRANOM KALJENJU: " << temp << std::endl;	
+		if (myfile.is_open())
+    	{
+        myfile << temp;
+        myfile.close();
+    	}
+    	else std::cout << "Unable to open file";	
 	}
 
 
@@ -205,7 +215,13 @@ int main(int argc, char **argv)
 		}
 
 		// std::cout << "Rjesenje u GENETSKOM ALGORITMU: " << genAlg.maxDistanceInUnits[0] << std::endl;
-		rjesenjeGen(&genAlg, A);
+		if (myfile.is_open())
+    	{	
+        myfile << rjesenjeGen(&genAlg, A);
+        myfile.close();
+    	}
+    	else std::cout << "Unable to open file";
+		
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -244,7 +260,14 @@ int main(int argc, char **argv)
 		std::cout << "Algoritmi su se izvodili skupa!" << std::endl;
 
 		std::cout << "Rjesenje u SIMLULIRANOM KALJENJU: " << temp << std::endl;
-		rjesenjeGen(&genAlg, A);
+		if (myfile.is_open())
+    	{
+        myfile << temp;
+        myfile << "\n";
+        myfile << rjesenjeGen(&genAlg, A);
+        myfile.close();
+    	}
+    else std::cout << "Unable to open file";
 		
 	}
 
@@ -303,7 +326,15 @@ int main(int argc, char **argv)
 		std::cout << "Algoritmi su se izvodili odvojeno!" << std::endl;
 
 		std::cout << "Rjesenje u SIMLULIRANOM KALJENJU: " << temp << std::endl;
-		rjesenjeGen(&genAlg, A);
+		if (myfile.is_open())
+    	{
+        myfile << temp;
+        myfile << "\n";
+        myfile << rjesenjeGen(&genAlg, A);
+        myfile.close();
+    	}
+    	else std::cout << "Unable to open file";
+
 	}
 
 	return 0;
