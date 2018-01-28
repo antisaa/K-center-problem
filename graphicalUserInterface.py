@@ -204,7 +204,7 @@ class KCenterProblem(Frame):
             #print "Destructor za file"
             self.file.grid_forget()
             self.k.grid_forget()
-            self.fileValue.grid_forget()
+            #self.fileValue.grid_forget()
             self.kValue.grid_forget()
 
             self.compile.grid_forget() 
