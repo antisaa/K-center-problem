@@ -10,18 +10,22 @@ class annealing
 public:	
 
 	graph * input;					//pointer na strukturu graph
-	double evaulation;				//trenutna najveca udaljenost od nekog konzuma do najblizeg skladista
+	std::vector<bool> chosen;
+	std::pair<int,int> worst;		// preko njega se pristupa egzaktnoj kvaliteti = matrix[worst.first,worst.second]
+	static unsigned seed;
 
-	int remove;						//redni broj vrha koji je skladiste za evaulation, mijenja se kad se pozove quality()
 
-	annealing();
 	annealing(graph *);				//popunjava pointer na strukturu input
+	annealing();
 	~annealing();
 
-	std::pair<int, int> next2();	//mice skladiste 
-	double quality();				//popunjava evaulation te vraca tu vrijednost
+
+	double heuristic();
+	std::pair<int, int> next();		//vraca index nekog skladista te nekog ne skladista 
+	double quality();				//popunjava worst te vraca tu vrijednost
 	void swap(int, int);			//redni broj prvog prestaje biti skladiste, redni broj drugog parametra postaje skaldiste
-	double repeat2(int, double);
+	void SA(int, double);
+	void reset();
 
 };
 

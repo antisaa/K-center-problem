@@ -8,33 +8,20 @@ from subprocess import call
 import matplotlib.pyplot as plt
 import numpy as np
 
-class App:
+class KCenterProblem(Frame):
 
-    #The constructor is called with parent widget(the master), to which it adds a number od child widgets
-    def __init__(self, master):
+    def __init__(self, master ):
+        
+        Frame.__init__(self, master)
+
 
         self.frame = Frame(master)  #Starts by creating a Frame widget. A frame is a simple container and is in this case only used to hold the other widgets
         self.frame.pack()   #After creating the widget, we immediately call the pack method to make the frame visible.
-        master.minsize(width=800, height=600)
-        master.maxsize(width=800, height=600)
+        master.minsize(width=600, height=400)
+        master.maxsize(width=1000, height=650)
         master.title("K-center problem")
         #Creating button widgets, as a children to the frame
         #This time, we pass a number of options to the constructor, as keyword arguments.
-        
-        self.question = Label (self.frame, text = "How do you want to input data?", fg="black")
-        self.question.grid(row=0,column=0,columnspan=2)
-
-        self.inputVar = IntVar()
-        self.inputFile = Radiobutton(self.frame, text="From file", 
-                                                variable=self.inputVar, value=1, command=self.showFile)
-        self.inputFile.grid(row=0, column=2, columnspan=1)
-
-        self.inputMan = Radiobutton(self.frame, text="Manually", 
-                                                variable=self.inputVar, value=2, command=self.showMan)
-        self.inputMan.grid(row=0, column=3, columnspan=1)
-
-        self.positioning = Label(self.frame, text="                                       ",fg="black")
-        self.positioning.grid(row=0,column=4,columnspan=10)
         ###############################################################
 
 
@@ -57,7 +44,7 @@ class App:
         self.range = Label(self.frame, text="Uniform range:")
         
         ###################ENTRIES###################################
-        self.fileValue  = Entry(self.frame)
+        #self.fileValue  = Entry(self.frame)
         self.nValue     = Entry(self.frame)
         self.kValue     = Entry(self.frame)
         self.rangeValue = Entry(self.frame)
@@ -87,17 +74,79 @@ class App:
         self.var = IntVar()
 
         ##############################RADIOBUTTONS##################################
-        self.simCheckbutton = Radiobutton(self.frame, text="Run only simulated annealing", 
-                                                variable=self.var, value=0)
-        self.genCheckbutton = Radiobutton(self.frame, text="Run only genetic algorithm", 
-                                                variable=self.var, value=1)
-        self.genSimToCheckbutton = Radiobutton(self.frame, text="Run simulated and genetic together", 
-                                                variable=self.var,value = 2)
-        self.genSimSepCheckbutton = Radiobutton(self.frame, text="Run simulated and genetic separately", 
-                                                variable=self.var, value=3)
+        self.simCheckbutton = Radiobutton(self.frame, text="Run only simulated annealing", variable=self.var, value=0)
+        self.genCheckbutton = Radiobutton(self.frame, text="Run only genetic algorithm",  variable=self.var, value=1)
+        self.genSimToCheckbutton = Radiobutton(self.frame, text="Run simulated and genetic together", variable=self.var,value = 2)
+        self.genSimSepCheckbutton = Radiobutton(self.frame, text="Run simulated and genetic separately", variable=self.var, value=3)
         
         self.genResult = -1
         self.simResult = -1
+
+        self.OPTIONS = [
+            "pmed1.txt",
+            "pmed2.txt",
+            "pmed3.txt",
+            "pmed4.txt",
+            "pmed5.txt",
+            "pmed6.txt",
+            "pmed7.txt",
+            "pmed8.txt",
+            "pmed9.txt",
+            "pmed10.txt",
+            "pmed11.txt",
+            "pmed12.txt",
+            "pmed13.txt",
+            "pmed14.txt",
+            "pmed15.txt",
+            "pmed16.txt",
+            "pmed17.txt",
+            "pmed18.txt",
+            "pmed19.txt",
+            "pmed20.txt",
+            "pmed21.txt",
+            "pmed22.txt",
+            "pmed23.txt",
+            "pmed24.txt",
+            "pmed25.txt",
+            "pmed26.txt",
+            "pmed27.txt",
+            "pmed28.txt",
+            "pmed29.txt",
+            "pmed30.txt",
+            "pmed31.txt",
+            "pmed32.txt",
+            "pmed33.txt",
+            "pmed34.txt",
+            "pmed35.txt",
+            "pmed36.txt",
+            "pmed37.txt",
+            "pmed38.txt",
+            "pmed39.txt",
+            "pmed40.txt",
+
+        ]           
+        self.variable = StringVar(self.frame)
+        self.variable.set(self.OPTIONS[0]) # default value
+
+        self.w = apply(OptionMenu, (self.frame, self.variable) + tuple(self.OPTIONS))
+        
+        self.initialUI()
+
+    def initialUI(self):
+
+        self.question = Label (self.frame, text = "How do you want to input data?", fg="black")
+        self.question.grid(row=0,column=0,columnspan=2)
+
+        self.inputVar = IntVar()
+        self.inputFile = Radiobutton(self.frame, text="From file", variable=self.inputVar, value=1, command=self.showFile)
+        self.inputFile.grid(row=0, column=2, columnspan=1)
+
+        self.inputMan = Radiobutton(self.frame, text="Manually", variable=self.inputVar, value=2, command=self.showMan)
+        self.inputMan.grid(row=0, column=3, columnspan=1)
+
+        #self.positioning = Label(self.frame, text="                                       ",fg="black")
+        #self.positioning.grid(row=0,column=4,columnspan=10)
+
 
     def showFile(self):
 
@@ -131,7 +180,8 @@ class App:
         self.file.grid(row=1,column=0)
         self.k.grid(row=2,column=0)
 
-        self.fileValue.grid(row=1, column=1, columnspan=3)
+        self.w.grid(row=1, column=1, columnspan=3)
+        #self.fileValue.grid(row=1, column=1, columnspan=3)
         self.kValue.grid(row=2, column=1, columnspan=3)
         
         self.compile.grid(row=5, column=1) 
@@ -143,6 +193,8 @@ class App:
         self.genCheckbutton.grid(row=3, column=0, columnspan=1)
         self.genSimSepCheckbutton.grid(row=3, column=1, columnspan=3)
         self.genSimToCheckbutton.grid(row=4, column=1, columnspan=3)
+
+        
 
     def showMan(self):
         
@@ -170,6 +222,8 @@ class App:
             self.labelStartRunning.grid_forget()
             self.labelEndRunning.grid_forget()
 
+            self.w.grid_forget()
+
             self.fileMod = False
            
         self.n.grid(row=1,column=0)
@@ -191,7 +245,7 @@ class App:
         self.genCheckbutton.grid(row=4, column=0, columnspan=1)
         self.genSimSepCheckbutton.grid(row=4, column=1, columnspan=3)
         self.genSimToCheckbutton.grid(row=5, column=1, columnspan=3)
-        
+    
     def getGraph(self):
 
         label =  ["Genetski","Simulirano"]
@@ -259,10 +313,10 @@ class App:
         start_time= time.time()
 
         if(self.inputVar.get()==1):
-            #print self.var.get() ,self.kValue.get(),self.fileValue.get()
-            call(["./prog",str(self.var.get()),self.kValue.get(),self.fileValue.get()])
+            print (self.var.get() ,self.kValue.get(),"/tests/"+self.variable.get())
+            call(["./prog",str(self.var.get()),self.kValue.get(),"tests/"+self.variable.get()])
         elif(self.inputVar.get()==2):
-            #print self.var.get(),self.nValue.get(),self.kValue.get(),self.rangeValue.get()
+            print (self.var.get(),self.nValue.get(),self.kValue.get(),self.rangeValue.get())
             call(["./prog",str(self.var.get()),self.nValue.get(),self.kValue.get(),self.rangeValue.get()])
 
         #commands.getoutput(["./prog"])
@@ -326,19 +380,25 @@ class App:
         
         filee.close()
 
-        
+def main(args):
+
+    root = Tk() #Creating Tk root widget
+
+    app = KCenterProblem(root) #Creating instance of the App class using root widget as its parent
+
+    #The mainloop call enters the Tk event loop, in which the application will stay until the quit method is called (just click the QUIT button), or the window is closed.
+    root.mainloop() 
+
+    #The destroy call is only required if you run this example under certain development environments; it explicitly destroys the main window when the event loop is terminated
+    root.destroy() # optional; see description below
+    
+    
+
+if __name__ == "__main__":
+    main(sys.argv)
+    
 
 
         
         
-
-root = Tk() #Creating Tk root widget
-
-app = App(root) #Creating instance of the App class using root widget as its parent
-
-#The mainloop call enters the Tk event loop, in which the application will stay until the quit method is called (just click the QUIT button), or the window is closed.
-root.mainloop() 
-
-#The destroy call is only required if you run this example under certain development environments; it explicitly destroys the main window when the event loop is terminated
-root.destroy() # optional; see description below
 

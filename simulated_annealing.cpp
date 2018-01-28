@@ -7,19 +7,72 @@
 #include <time.h>
 #include <cstdlib>
 
-static int seeder = 0;
+unsigned annealing::seed = std::chrono::system_clock::now().time_since_epoch().count();
+
+void annealing::reset()
+{
+	std::default_random_engine generator(seed);
+	seed++;
+
+	std::uniform_int_distribution<int> distribution(0, input->n - 1);
+
+	int numberOfWarehouses = input->k;
+	chosen.assign(input->n, false);
+		
+
+	while(numberOfWarehouses)
+	{
+		int tempindex = distribution(generator);
+		if(chosen[tempindex] == false)
+		{
+			chosen[tempindex] = true;
+			numberOfWarehouses--;				
+		}
+	}
+}
+
+double annealing::heuristic() 
+{
+	double sum = 0;
+	for( int j = 0; j < input->n; j++ )
+	{
+		if( chosen[j] == true )
+			sum += input->pointAsWarehouseQuality[j];
+	}
+
+	return sum;
+}
 
 annealing::annealing(graph * input_)
 {
 	input = input_;
+
+	std::default_random_engine generator(seed);
+	seed++;
+
+	std::uniform_int_distribution<int> distribution(0, input->n - 1);
+
+	int numberOfWarehouses = input->k;
+	chosen.assign(input->n, false);
+		
+
+	while(numberOfWarehouses)
+	{
+		int tempindex = distribution(generator);
+		if(chosen[tempindex] == false)
+		{
+			chosen[tempindex] = true;
+			numberOfWarehouses--;				
+		}
+	}
 }
 
 
-std::pair<int,int> annealing::next2()
+std::pair<int,int> annealing::next()
 {
-	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 	std::default_random_engine generator(seed);
-	std::uniform_int_distribution<int> distribution(0, (*input).n - 1);
+	seed++;
+	std::uniform_int_distribution<int> distribution(0, input->n - 1);
 
 	int j;	
 
@@ -27,74 +80,54 @@ std::pair<int,int> annealing::next2()
 	{
 		j = distribution(generator);
 
-	} while ( (*input).chosen[j] != false );
-	
-	//std::cout << "Vrhovi: " << input->n << "Remove: " << remove <<  "j: " << j << std::endl;
+	} while (  chosen[j] != false );
 
-	return std::make_pair (remove,j); // makni i-ti cvor, dodaj j-ti cvor	
+	int i;
+	do
+	{
+		i = distribution(generator);
+	} while (chosen[i] == false);
+	
+
+	return std::make_pair (i,j); // makni i-ti cvor, dodaj j-ti cvor
 }
 
 
 
 double annealing::quality()
 {
-	// double temp = 0;
-	// for (int i = 0; i < (*input).n; ++i)
-	// {
-	// 	if ((*input).chosen[i] == true)					//samo gledaj redove od odabranih skaldišta
-	// 		for (int j = 0; j < (*input).n; ++j)
-	// 		{
-	// 			if((*input).chosen[j] == false)				//nemoj gledat udaljenost izmedu dva skladista
-	// 				if ((*input).matrix[i][j] > temp)
-	// 					{
-	// 						remove = i;
-	// 						temp = (*input).matrix[i][j];
-	// 					}
-	// 		}
-	// }
+	std::vector<int> temp;
 
-	//return temp;
-
-	std::vector< double > distanceFromClosestWarehouse(input->n, -1);
-	std::vector< int > indexesForRemoveVariable(input->n, -1);
-
-	for(int j=0; j<input->n; j++) // iteriranje po svim "ne skladistima" te jedinke
+	// pronalazak najblizeg skladista za svako ne skladiste
+	for (int i = 0; i < input->n; ++i)
 	{
-		if( (*input).chosen[j] ) // preskacemo tocku ukoliko je ona "skladiste" 
-			continue; 
-
-		for(int z=0; z<input->n; z++ ) // iteriranje po svim "skladistima" te jedinke i odredivanje maks.
-								   // udaljenosti u jedinki izmedu "ne skladista" i "skladista"
+		temp.push_back(-1);
+		if (chosen[i] == false)					//samo gledaj redove od ne-skaldišta
 		{
-			if( !(*input).chosen[z] ) 
-				continue; // preskacemo ako ta tocka nije "skladiste" jer samo 
-						  // nas zanima udaljenost "ne skladista" i "skladista"
-			
-			if( distanceFromClosestWarehouse[j] == -1 )
+			for (int j = 0; j < input->n; ++j)
 			{
-				distanceFromClosestWarehouse[j] = (*input).matrix[j][z];
-				indexesForRemoveVariable[j] = z;
-			}
-
-			if( distanceFromClosestWarehouse[j] > (*input).matrix[j][z] )
-			{
-				distanceFromClosestWarehouse[j] = (*input).matrix[j][z];
-				indexesForRemoveVariable[j] = z;		
+				if(chosen[j] == true)				//nemoj gledat udaljenost izmedu dva ne-skladista
+					if (temp[i] == -1 || input->matrix[i][j] < input->matrix[i][temp[i]])
+						temp[i] = j;
 			}
 		}
 	}
 
-	double maxDistance = 0;
-	for( int i = 0; i < input->n; i++ )
+
+	// pronalazak naudaljenijeg najblizeg skladista
+	int temporary = -1;
+
+	for (int i = 0; i < input->n; ++i)
 	{
-		if( maxDistance < distanceFromClosestWarehouse[i] && input->chosen[i] == false )
-		{
-			maxDistance = distanceFromClosestWarehouse[i];
-			remove = indexesForRemoveVariable[i];
-		}
+		if (temp[i] != -1)
+			if( temporary == -1 || input->matrix[i][temp[i]] > input->matrix[temporary][temp[temporary]])
+				temporary = i;
 	}
 
-	return maxDistance;
+	worst.first = temp[temporary];
+	worst.second = temporary;
+	
+	return input->matrix[worst.first][worst.second];
 
 }
 
@@ -102,51 +135,45 @@ double annealing::quality()
 
 void annealing::swap (int i, int j) // prvi makne, drugi doda
 {
-	(*input).chosen[i] = false;
-	(*input).chosen[j] = true;
-	evaulation = quality();
+	if(chosen[i] == true)
+	{	
+		chosen[i] = false;
+		chosen[j] = true;
+
+	}
+	else
+	{
+		chosen[i] = true;
+		chosen[j] = false;
+	}
 }
 
-double annealing::repeat2( int temperature, double alpha)
+void annealing::SA(int temperature, double alpha)
 {	
-	srand (time(NULL) * seeder);
-
-
-	//unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-	//std::default_random_engine generator(seed+seeder);
-	//std::uniform_real_distribution<double> distribution(0, 1);
-
-
-
-
+	std::default_random_engine generator(seed);
+	std::uniform_real_distribution<double> distribution(0, 1);
 	double q1,q2;
 
 	while (temperature > 1)
 	{	
-		q1 = quality();
-		std::pair<int, int> temp = next2();
+		
+		q1 = heuristic();
+		std::pair<int, int> temp = next();
 		swap(temp.first, temp.second);
-		q2 = quality();
+		q2 = heuristic();
+
+
 		if (q1 < q2)
-			//if( distribution(generator) >= exp( (q2-q1)/temperature ) )
-			if( (double)((rand()%10000)/10000) >= exp( (q2-q1)/temperature ) )
+			if( distribution(generator) >= exp( -1*(q2-q1)/temperature ) )
 				swap(temp.second, temp.first);
 
 		temperature *= alpha;
+		
 	}
 
-	quality();
-	seeder++;
-	/*std::cout << "annealing ended, max is:" << quality() << std::endl << "Chosen are :" << std::endl;
-	for (int i = 0; i < (*input).n; ++i)
-	{
-		if((*input).chosen[i] == true)
-			std::cout << i <<" ";
-	}
-	std::cout<<std::endl;
-	*/
-
-	return evaulation;
+	
+	return; // ako return quality() onda vaki put napravi taj alg koji je spor pa bolje da se on poziva ako je fakat nuzno
+	
 
 }
 

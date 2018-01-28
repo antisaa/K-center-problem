@@ -11,48 +11,71 @@
 #include <sstream>
 #include <fstream>
 
+std::ofstream myfile("resultFile.txt");
 
 double rjesenjeGen( geneticAlgorithm *alg, graph *A )
 {
-	std::vector< double > distanceFromClosestWarehouse(A->n, -1);
+	// annealing simulirano(A);
 
-	std::vector< std::vector< bool > > *pop = new std::vector< std::vector< bool > >;
-	pop = alg->population;
+	// simulirano.chosen = alg->population[ alg->indexVector[0] ];
 
-	for(int j=0; j<A->n; j++) // iteriranje po svim "ne skladistima" te jedinke
+	// std::cout << "Rjesenje u GENETSKOM ALGORITMU sa qualitiem: " << simulirano.quality() << std::endl;
+
+
+	std::vector< double > maxDistances;
+
+
+	for( int i = 0; i < alg->populationNumber / 2; i++ )
 	{
-		if( (*pop)[ alg->indexVector[0] ][j] ) // preskacemo tocku ukoliko je ona "skladiste" 
-			continue; 
+		std::vector< double > distanceFromClosestWarehouse(A->n, -1);
 
-		for(int z=0; z<A->n; z++ ) // iteriranje po svim "skladistima" te jedinke i odredivanje min.
-								   // udaljenosti u jedinki izmedu "ne skladista" i "skladista"
+		for(int j=0; j<A->n; j++) // iteriranje po svim "ne skladistima" te jedinke
 		{
-			if( !(*pop)[ alg->indexVector[0] ][z] ) 
-				continue; // preskacemo ako ta tocka nije "skladiste" jer samo 
-						  // nas zanima udaljenost "ne skladista" i "skladista"
-			
-			if( distanceFromClosestWarehouse[j] == -1 )
-			{
-				distanceFromClosestWarehouse[j] = A->matrix[j][z];
-			}
+			if( alg->population[ alg->indexVector[i] ][j] ) // preskacemo tocku ukoliko je ona "skladiste" 
+				continue; 
 
-			if( distanceFromClosestWarehouse[j] > A->matrix[j][z] )
+			for(int z=0; z<A->n; z++ ) // iteriranje po svim "skladistima" te jedinke i odredivanje min.
+									   // udaljenosti u jedinki izmedu "ne skladista" i "skladista"
 			{
-				distanceFromClosestWarehouse[j] = A->matrix[j][z];		
+				if( !alg->population[ alg->indexVector[i] ][z] ) 
+					continue; // preskacemo ako ta tocka nije "skladiste" jer samo 
+							  // nas zanima udaljenost "ne skladista" i "skladista"
+				
+				if( distanceFromClosestWarehouse[j] == -1 )
+				{
+					distanceFromClosestWarehouse[j] = A->matrix[j][z];
+				}
+
+				if( distanceFromClosestWarehouse[j] > A->matrix[j][z] )
+				{
+					distanceFromClosestWarehouse[j] = A->matrix[j][z];		
+				}
 			}
+		}
+
+		double maxDistance = 0;
+
+		for( int j = 0; j < A->n; j++ )
+		{
+			if( maxDistance < distanceFromClosestWarehouse[j] && alg->population[ alg->indexVector[i] ][j] == false )
+				maxDistance = distanceFromClosestWarehouse[j];
+		}
+
+		maxDistances.push_back(maxDistance);
+	}
+
+	double minDistance = maxDistances[0];
+
+	for( int i = 0; i < alg->populationNumber / 2; i++ )
+	{
+		if( minDistance > maxDistances[i] )
+		{
+			minDistance = maxDistances[i];
 		}
 	}
 
-	double maxDistance = 0;
-
-	for( int i = 0; i < A->n; i++ )
-	{
-		if( maxDistance < distanceFromClosestWarehouse[i] && (*pop)[ alg->indexVector[0] ][i] == false )
-			maxDistance = distanceFromClosestWarehouse[i];
-	}
-
-	std::cout << "Rjesenje u GENETSKOM ALGORITMU: " << maxDistance << std::endl;
-	return maxDistance;
+	std::cout << "Rjesenje u GENETSKOM ALGORITMU: " << minDistance << std::endl;
+	return minDistance;
 }
 
 ////////////////////////////////////////////
@@ -69,8 +92,6 @@ int main(int argc, char **argv)
 	int range;				// inic. bez .txt	
 	std::string fileName;						// inic. sa .txt
 
-	std::ofstream myfile("resultFile.txt");
-    
 	graph *A = new graph();
 	if( argc == 5 )
 	{
@@ -126,7 +147,7 @@ int main(int argc, char **argv)
         }
 
 		fileName = argv[3];	
-		graph *tempA = new graph( fileName, 500, 100 );
+		graph *tempA = new graph( fileName, k );
 		
 		A = tempA;
 	}
@@ -137,46 +158,55 @@ int main(int argc, char **argv)
 	}
 	/////////////////////////////////////////////////////////
 
-	annealing algorithm(A); 
-	double temp = 1000;
-
 	// ispod su varijable potrebne za konstrukciju geneticAlgoritm instance
-	int populationNumber_ = 100; //400
-	int numberOfPoorUnits_ = 90;//300
-	int numberOfGenerations = 100;//500
-	std::vector< std::vector< bool > > *population_ = new std::vector< std::vector< bool > >;
-	srand( time(NULL) * geneticAlgorithm::seeder ); 
-	//
+	int populationNumber_ = 3000;	
+	int numberOfPoorUnits_ = 0;
+	int numberOfGenerations = 500;
+	std::vector< std::vector< bool > > population_;
+	//PROMIJENITI OVO DA SE UCITAVA PREKO KONSOLE
 
+	annealing algorithm(A); 
+	double temp = 5000;
 	A->countQuality();
+
+	geneticAlgorithm genAlg( A, populationNumber_, numberOfPoorUnits_ );	
+
+	double best = -1;
+	double ev;
 
 	////////////////////////////////////////////////////////////////
 	///////************ SAMO SIMULIRANO KALJENJE ************///////
 	if( flag == '0' )
 	{
-		double ev;
-		int tempi;
-	
 		for (int i = 0; i < populationNumber_; ++i)
 		{
-			// std::cout << "Obavljam: " << i << ". iteraciju SIMULIRANOG KALJENJA" << std::endl;
+			std::cout << "Obavljam: " << i << ". iteraciju SIMULIRANOG KALJENJA" << std::endl;
 
-			ev = algorithm.repeat2( temp, 0.6 );
-
-			if( temp > ev ) 
+			algorithm.SA( temp, 0.6 );
+			genAlg.population[i] = algorithm.chosen;
+			
+			
+			ev = algorithm.quality();
+			
+			if( best == -1 || best > ev )
 			{
-				temp = ev;
-				tempi = i;
+				best = ev;
 			}
+
+			algorithm.reset();
+
+
 		}
 
-		std::cout << "Rjesenje u SIMLULIRANOM KALJENJU: " << temp << std::endl;	
-		if (myfile.is_open())
-    	{
-        myfile << temp;
+		std::cout << "Rjesenje u SIMLULIRANOM KALJENJU: " << best << std::endl;
+
+	if (myfile.is_open())
+    {
+        myfile << best;
+        myfile << "\n";
         myfile.close();
-    	}
-    	else std::cout << "Unable to open file";	
+    }
+    else std::cout << "Unable to open file";	
 	}
 
 
@@ -184,28 +214,6 @@ int main(int argc, char **argv)
 	///////************ SAMO GENETSKI ALGORITAM ************////////
 	if( flag == '1' )
 	{
-		for(int i = 0; i < populationNumber_; i++)
-		{
-			std::vector< bool > temp(A->n, false);
-
-			int numberOfWarehouses = A->k;
-
-			while( numberOfWarehouses )
-			{
-				int indexOfWarehouse = rand() % A->n;
-				geneticAlgorithm::seeder++;
-
-				if( temp[indexOfWarehouse] == false )
-					numberOfWarehouses--;
-
-				temp[indexOfWarehouse] = true;
-			}
-
-			(*population_).push_back( temp );
-		}
-
-		geneticAlgorithm genAlg( A, populationNumber_, numberOfPoorUnits_, population_ );
-
 		for(int i = 0; i < numberOfGenerations; i++)
 		{
 			std::cout << "Obavljam: " << i + 1 << ". generaciju GENETSKOG ALGORITMA" << std::endl;
@@ -213,12 +221,14 @@ int main(int argc, char **argv)
 			genAlg.crossing();
 			genAlg.mutation(); 
 		}
+		genAlg.selection();
 
-		// std::cout << "Rjesenje u GENETSKOM ALGORITMU: " << genAlg.maxDistanceInUnits[0] << std::endl;
 		if (myfile.is_open())
-    	{	
-        myfile << rjesenjeGen(&genAlg, A);
-        myfile.close();
+    	{
+        	        	
+        	myfile << rjesenjeGen(&genAlg, A);
+        	myfile << "\n";
+        	myfile.close();
     	}
     	else std::cout << "Unable to open file";
 		
@@ -228,25 +238,23 @@ int main(int argc, char **argv)
 	///////************ SIMULIRANO I GENETSKI ALGORITAM ZAJEDNO ************////////
 	if( flag == '2' )
 	{
-		double ev;
-		int tempi;
-
 		for (int i = 0; i < populationNumber_; ++i)
 		{
-			// std::cout << "Obavljam: " << i << ". iteraciju SIMULIRANOG KALJENJA" << std::endl;
+			std::cout << "Obavljam: " << i << ". iteraciju SIMULIRANOG KALJENJA" << std::endl;
 
-			ev = algorithm.repeat2( temp, 0.6 );
-
-			if( temp > ev ) 
+			algorithm.SA( temp, 0.6 );
+			genAlg.population[i] = algorithm.chosen;
+			
+			
+			ev = algorithm.quality();
+			
+			if( best == -1 || best > ev )
 			{
-				temp = ev;
-				tempi = i;
+				best = ev;
 			}
 
-			(*population_).push_back( A->chosen );
+			algorithm.reset();
 		}
-
-		geneticAlgorithm genAlg( A, populationNumber_, numberOfPoorUnits_, population_ );
 
 		for(int i = 0; i < numberOfGenerations; i++)
 		{
@@ -255,18 +263,21 @@ int main(int argc, char **argv)
 			genAlg.crossing();
 			genAlg.mutation(); 
 		}
+		genAlg.selection();
 
 		std::cout << std::endl;
 		std::cout << "Algoritmi su se izvodili skupa!" << std::endl;
 
-		std::cout << "Rjesenje u SIMLULIRANOM KALJENJU: " << temp << std::endl;
-		if (myfile.is_open())
-    	{
-        myfile << temp;
+		std::cout << "Rjesenje u SIMLULIRANOM KALJENJU: " << best << std::endl;
+		
+
+    if (myfile.is_open())
+    {
+        myfile << best;
         myfile << "\n";
         myfile << rjesenjeGen(&genAlg, A);
         myfile.close();
-    	}
+    }
     else std::cout << "Unable to open file";
 		
 	}
@@ -276,43 +287,23 @@ int main(int argc, char **argv)
 	///////************ SIMULIRANO I GENETSKI ALGORITAM ODVOJENO ************////////
 	if( flag == '3' )
 	{
-		double ev;
-		int tempi;
-
 		for (int i = 0; i < populationNumber_; ++i)
 		{
-			// std::cout << "Obavljam: " << i << ". iteraciju SIMULIRANOG KALJENJA" << std::endl;
+			std::cout << "Obavljam: " << i << ". iteraciju SIMULIRANOG KALJENJA" << std::endl;
 
-			ev = algorithm.repeat2( temp, 0.6 );
-
-			if( temp > ev ) 
+			algorithm.SA( temp, 0.6 );
+			genAlg.population[i] = algorithm.chosen;
+			
+			
+			ev = algorithm.quality();
+			
+			if( best == -1 || best > ev )
 			{
-				temp = ev;
-				tempi = i;
-			}
-		}
-
-		for(int i = 0; i < populationNumber_; i++)
-		{
-			std::vector< bool > temp(A->n, false);
-
-			int numberOfWarehouses = A->k;
-
-			while( numberOfWarehouses )
-			{
-				int indexOfWarehouse = rand() % A->n;
-				geneticAlgorithm::seeder++;
-
-				if( temp[indexOfWarehouse] == false )
-					numberOfWarehouses--;
-
-				temp[indexOfWarehouse] = true;
+				best = ev;
 			}
 
-			(*population_).push_back( temp );
+			algorithm.reset();
 		}
-
-		geneticAlgorithm genAlg( A, populationNumber_, numberOfPoorUnits_, population_ );
 
 		for(int i = 0; i < numberOfGenerations; i++)
 		{
@@ -321,20 +312,21 @@ int main(int argc, char **argv)
 			genAlg.crossing();
 			genAlg.mutation(); 
 		}
+		genAlg.selection();
 
 		std::cout << std::endl;
 		std::cout << "Algoritmi su se izvodili odvojeno!" << std::endl;
 
-		std::cout << "Rjesenje u SIMLULIRANOM KALJENJU: " << temp << std::endl;
-		if (myfile.is_open())
-    	{
-        myfile << temp;
+		std::cout << "Rjesenje u SIMLULIRANOM KALJENJU: " << best << std::endl;
+		
+	if (myfile.is_open())
+    {
+        myfile << best;
         myfile << "\n";
         myfile << rjesenjeGen(&genAlg, A);
         myfile.close();
-    	}
-    	else std::cout << "Unable to open file";
-
+    }
+    else std::cout << "Unable to open file";
 	}
 
 	return 0;
